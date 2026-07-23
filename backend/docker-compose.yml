@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: snack-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123123
+      POSTGRES_DB: snack_dyali_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - snack-network
+
+
+volumes:
+  postgres_data:
+
+
+networks:
+  snack-network:
