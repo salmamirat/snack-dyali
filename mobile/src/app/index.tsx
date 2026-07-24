@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert } from "react-native";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Plus, RefreshCcw, Search, Home as HomeIcon, ShoppingBag, User } from "lucide-react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
-import { usePlatMutations } from "../hooks/usePlatMutations";
-import { usePlats } from "../hooks/usePlats";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../api/axios";
 import { formatLastSync } from "../utils/date";
 import { Plat } from "../types/plat";
 import Loading from "../components/Loading";
@@ -23,10 +23,67 @@ export default function Home() {
 
   const categories = ["Tout", "Sandwichs", "Tacos", "Boissons"];
 
-  const { data: plats, isLoading, refetch, isFetching } = usePlats(setLastSyncDate, setIsApiOffline);
+  useEffect(() => {
+    const loadInitialSyncTime = async () => {
+      try {
+        const storedSync = await AsyncStorage.getItem("last_sync");
+        if (storedSync) {
+          setLastSyncDate(storedSync);
+        }
+      } catch (error) {
+        console.error("Error loading initial last_sync:", error);
+      }
+    };
+    loadInitialSyncTime();
+  }, []);
+
+  const { data: plats, isLoading, refetch, isFetching } = useQuery<Plat[]>({
+    queryKey: ["plats"],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get("/plats");
+        await AsyncStorage.setItem("plats_cache", JSON.stringify(data));
+        const now = new Date().toISOString();
+        await AsyncStorage.setItem("last_sync", now);
+        setLastSyncDate(now);
+        setIsApiOffline(false);
+        return data;
+      } catch (error) {
+        setIsApiOffline(true);
+        const cached = await AsyncStorage.getItem("plats_cache");
+        const lastSync = await AsyncStorage.getItem("last_sync");
+        if (lastSync) setLastSyncDate(lastSync);
+        if (cached) return JSON.parse(cached);
+        throw error;
+      }
+    }
+  });
+
   const isOffline = netInfo.isConnected === false || isApiOffline;
 
-  const { deleteMutation, toggleDispoMutation } = usePlatMutations();
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/plats/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plats"] });
+    },
+    onError: () => {
+      Alert.alert("Erreur", "Impossible de supprimer en mode hors-ligne.");
+    }
+  });
+
+  const toggleDispoMutation = useMutation({
+    mutationFn: async ({ id, disponible }: { id: number, disponible: boolean }) => {
+      await api.put(`/plats/${id}`, { disponible });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plats"] });
+    },
+    onError: () => {
+      Alert.alert("Erreur", "Modification impossible hors-ligne.");
+    }
+  });
 
   const handleDelete = (id: number) => {
     Alert.alert(
@@ -49,7 +106,7 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      <SyncBanner isOffline={isOffline} lastSyncText={formatLastSync(lastSyncDate)} />
+      <SyncBanner isOffline={isOffline} lastSyncText={formatLastSync(lastSyncDate)} onForceSync={refetch} />
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>🍔 Snack Dyali</Text>

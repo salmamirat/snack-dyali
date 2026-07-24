@@ -21,23 +21,11 @@ export const usePlatMutations = () => {
     mutationFn: async ({ id, disponible }: { id: number, disponible: boolean }) => {
       await api.put(`/plats/${id}`, { disponible });
     },
-    onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: ["plats"] });
-      const previousPlats = queryClient.getQueryData(["plats"]);
-      queryClient.setQueryData(["plats"], (old: any) => {
-        if (!old) return old;
-        return old.map((plat: any) => 
-          plat.id === variables.id ? { ...plat, disponible: variables.disponible } : plat
-        );
-      });
-      return { previousPlats };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousPlats) queryClient.setQueryData(["plats"], context.previousPlats);
-      Alert.alert("Erreur", "Modification impossible hors-ligne.");
-    },
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plats"] });
+    },
+    onError: () => {
+      Alert.alert("Erreur", "Modification impossible hors-ligne.");
     }
   });
 

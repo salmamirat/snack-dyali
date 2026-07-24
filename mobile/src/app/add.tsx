@@ -9,7 +9,7 @@ export default function AddPlat() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (newPlat: any) => {
+    mutationFn: async (newPlat: { nom: string; prix: string; categorie: string; disponible: boolean }) => {
       const { data } = await api.post("/plats", {
         ...newPlat,
         prix: Number(newPlat.prix)

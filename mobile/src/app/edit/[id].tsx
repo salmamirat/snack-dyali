@@ -18,7 +18,7 @@ export default function EditPlat() {
   });
 
   const mutation = useMutation({
-    mutationFn: async (updatedPlat: any) => {
+    mutationFn: async (updatedPlat: { nom: string; prix: string; categorie: string; disponible: boolean }) => {
       const { data } = await api.put(`/plats/${id}`, {
         ...updatedPlat,
         prix: Number(updatedPlat.prix)
@@ -38,7 +38,7 @@ export default function EditPlat() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#F2994A" />
+        <ActivityIndicator size="large" color="#ff8c42" />
       </View>
     );
   }

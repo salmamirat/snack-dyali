@@ -1,94 +1,103 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator, Switch } from "react-native";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { platSchema, PlatFormData } from "../schemas/plat.schema";
 
 interface PlatFormProps {
-  initialValues?: Partial<PlatFormData>;
-  onSubmit: (data: PlatFormData) => void;
+  initialValues?: {
+    nom: string;
+    prix: string;
+    categorie: string;
+    disponible: boolean;
+  };
+  onSubmit: (data: { nom: string; prix: string; categorie: string; disponible: boolean }) => void;
   isLoading: boolean;
   submitLabel: string;
   onCancel: () => void;
 }
 
 export default function PlatForm({ initialValues, onSubmit, isLoading, submitLabel, onCancel }: PlatFormProps) {
-  const { control, handleSubmit, formState: { errors }, watch, setValue } = useForm<PlatFormData>({
-    resolver: zodResolver(platSchema),
-    defaultValues: {
-      nom: initialValues?.nom || "",
-      categorie: initialValues?.categorie || "",
-      prix: initialValues?.prix || "",
-      disponible: initialValues?.disponible ?? true,
-    }
-  });
+  const isEditing = !!initialValues?.nom;
 
-  const disponible = watch("disponible");
+  const [nom, setNom] = useState(initialValues?.nom || "");
+  const [prix, setPrix] = useState(initialValues?.prix || "");
+  const [categorie, setCategorie] = useState(initialValues?.categorie || "");
+  const [disponible, setDisponible] = useState(initialValues?.disponible ?? true);
+
+  const [errors, setErrors] = useState<{ nom?: string; prix?: string; categorie?: string }>({});
+
+  const validate = () => {
+    const newErrors: { nom?: string; prix?: string; categorie?: string } = {};
+
+    if (!nom.trim()) {
+      newErrors.nom = "Le nom est obligatoire";
+    }
+
+    if (!prix.trim()) {
+      newErrors.prix = "Le prix est obligatoire";
+    } else if (!/^[0-9]+(\.[0-9]{1,2})?$/.test(prix)) {
+      newErrors.prix = "Prix invalide";
+    }
+
+    if (!categorie.trim()) {
+      newErrors.categorie = "La catégorie est obligatoire";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePressSubmit = () => {
+    if (validate()) {
+      onSubmit({ nom, prix, categorie, disponible });
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Ajouter un nouveau plat</Text>
-      <Text style={styles.subtitle}>Remplissez les informations ci-dessous pour mettre à jour votre carte.</Text>
+      <Text style={styles.title}>{isEditing ? "Modifier le plat" : "Ajouter un nouveau plat"}</Text>
+      <Text style={styles.subtitle}>
+        {isEditing 
+          ? "Modifier les informations ci-dessous pour mettre à jour le plat." 
+          : "Remplissez les informations ci-dessous pour mettre à jour votre carte."}
+      </Text>
 
       <View style={styles.field}>
         <Text style={styles.label}>NOM DU PLAT</Text>
-        <Controller
-          control={control}
-          name="nom"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={[styles.input, errors.nom && styles.inputError]}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-              placeholder="Ex: Tacos Mixte"
-              placeholderTextColor="#5f5e5e"
-            />
-          )}
+        <TextInput
+          style={[styles.input, errors.nom && styles.inputError]}
+          onChangeText={setNom}
+          value={nom}
+          placeholder="Ex: Tacos Poulet"
+          placeholderTextColor="#5f5e5e"
         />
-        {errors.nom && <Text style={styles.errorText}>{errors.nom.message}</Text>}
+        {errors.nom && <Text style={styles.errorText}>{errors.nom}</Text>}
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>PRIX (MAD)</Text>
-        <Controller
-          control={control}
-          name="prix"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <View style={[styles.inputWrapper, errors.prix && styles.inputError]}>
-              <TextInput
-                style={styles.inputNoBorder}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                keyboardType="decimal-pad"
-                placeholder="0.00"
-                placeholderTextColor="#5f5e5e"
-              />
-              <Text style={styles.currency}>DH</Text>
-            </View>
-          )}
-        />
-        {errors.prix && <Text style={styles.errorText}>{errors.prix.message}</Text>}
+        <View style={[styles.inputWrapper, errors.prix && styles.inputError]}>
+          <TextInput
+            style={styles.inputNoBorder}
+            onChangeText={setPrix}
+            value={prix}
+            keyboardType="decimal-pad"
+            placeholder="0.00"
+            placeholderTextColor="#5f5e5e"
+          />
+          <Text style={styles.currency}>DH</Text>
+        </View>
+        {errors.prix && <Text style={styles.errorText}>{errors.prix}</Text>}
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>CATÉGORIE</Text>
-        <Controller
-          control={control}
-          name="categorie"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={[styles.input, errors.categorie && styles.inputError]}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-              placeholder="Choisir une catégorie"
-              placeholderTextColor="#5f5e5e"
-            />
-          )}
+        <TextInput
+          style={[styles.input, errors.categorie && styles.inputError]}
+          onChangeText={setCategorie}
+          value={categorie}
+          placeholder="Ex: Sandwichs"
+          placeholderTextColor="#5f5e5e"
         />
-        {errors.categorie && <Text style={styles.errorText}>{errors.categorie.message}</Text>}
+        {errors.categorie && <Text style={styles.errorText}>{errors.categorie}</Text>}
       </View>
 
       <View style={styles.switchContainer}>
@@ -98,7 +107,7 @@ export default function PlatForm({ initialValues, onSubmit, isLoading, submitLab
         </View>
         <Switch
           value={disponible}
-          onValueChange={(val) => setValue("disponible", val)}
+          onValueChange={setDisponible}
           trackColor={{ false: "#e2e2e2", true: "#ff8c42" }}
           thumbColor="#ffffff"
         />
@@ -106,7 +115,7 @@ export default function PlatForm({ initialValues, onSubmit, isLoading, submitLab
 
       <TouchableOpacity 
         style={styles.btnPrimary} 
-        onPress={handleSubmit(onSubmit as any)}
+        onPress={handlePressSubmit}
         disabled={isLoading}
       >
         {isLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.btnPrimaryText}>{submitLabel}</Text>}
