@@ -4,13 +4,13 @@ const openapi = {
   info: {
     title: "Snack Dyali API",
     version: "1.0.0",
-    description: "API de gestion des plats"
+    description: "API de gestion des plats",
   },
 
   servers: [
     {
-      url: "http://localhost:3000"
-    }
+      url: "http://localhost:3000",
+    },
   ],
 
   paths: {
@@ -19,19 +19,29 @@ const openapi = {
         summary: "Liste des plats",
         responses: {
           200: {
-            description: "Liste des plats"
-          }
-        }
+            description: "Liste des plats",
+          },
+        },
       },
 
       post: {
         summary: "Créer un plat",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/PlatInput",
+              },
+            },
+          },
+        },
         responses: {
           201: {
-            description: "Plat créé"
-          }
-        }
-      }
+            description: "Plat créé",
+          },
+        },
+      },
     },
 
     "/api/plats/{id}": {
@@ -43,18 +53,18 @@ const openapi = {
             in: "path",
             required: true,
             schema: {
-              type: "integer"
-            }
-          }
+              type: "integer",
+            },
+          },
         ],
         responses: {
           200: {
-            description: "Plat trouvé"
+            description: "Plat trouvé",
           },
           404: {
-            description: "Plat introuvable"
-          }
-        }
+            description: "Plat introuvable",
+          },
+        },
       },
 
       put: {
@@ -65,15 +75,25 @@ const openapi = {
             in: "path",
             required: true,
             schema: {
-              type: "integer"
-            }
-          }
+              type: "integer",
+            },
+          },
         ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/PlatInput",
+              },
+            },
+          },
+        },
         responses: {
           200: {
-            description: "Plat modifié"
-          }
-        }
+            description: "Plat modifié",
+          },
+        },
       },
 
       delete: {
@@ -84,18 +104,74 @@ const openapi = {
             in: "path",
             required: true,
             schema: {
-              type: "integer"
-            }
-          }
+              type: "integer",
+            },
+          },
         ],
         responses: {
           204: {
-            description: "Plat supprimé"
-          }
-        }
-      }
-    }
-  }
+            description: "Plat supprimé",
+          },
+        },
+      },
+    },
+  },
+
+  components: {
+    schemas: {
+      Plat: {
+        type: "object",
+        properties: {
+          id: {
+            type: "integer",
+            example: 1,
+          },
+          nom: {
+            type: "string",
+            example: "Pizza",
+          },
+          prix: {
+            type: "number",
+            example: 55,
+          },
+          categorie: {
+            type: "string",
+            example: "Fast Food",
+          },
+          disponible: {
+            type: "boolean",
+            example: true,
+          },
+          created_at: {
+            type: "string",
+            format: "date-time",
+          },
+        },
+      },
+      PlatInput: {
+        type: "object",
+        properties: {
+          nom: {
+            type: "string",
+            example: "Pizza",
+          },
+          prix: {
+            type: "number",
+            example: 55,
+          },
+          categorie: {
+            type: "string",
+            example: "Fast Food",
+          },
+          disponible: {
+            type: "boolean",
+            example: true,
+          },
+        },
+        required: ["nom", "prix", "categorie"],
+      },
+    },
+  },
 };
 
 module.exports = openapi;

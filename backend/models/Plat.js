@@ -1,50 +1,53 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 
-
-const Plat = sequelize.define("Plat",{
-
-    id:{
-        type:DataTypes.INTEGER,
-        primaryKey:true,
-        autoIncrement:true
+const Plat = sequelize.define(
+  "Plat",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
     },
 
-
-    nom:{
-        type:DataTypes.STRING(100),
-        allowNull:false
+    nom: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
     },
 
-
-    prix:{
-        type:DataTypes.DECIMAL(6,2),
-        allowNull:false
+    prix: {
+      type: DataTypes.DECIMAL(6, 2),
+      allowNull: false,
+      validate: {
+        min: 0,
+      },
     },
 
-
-    categorie:{
-        type:DataTypes.STRING(50),
-        allowNull:false
+    categorie: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
     },
 
-
-    disponible:{
-        type:DataTypes.BOOLEAN,
-        defaultValue:true
+    disponible: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
     },
 
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+  },
+  {
+    tableName: "plats",
+    timestamps: false,
+  }
+);
 
-    created_at:{
-        type:DataTypes.DATE,
-        defaultValue:DataTypes.NOW
-    }
-
-
-},{
-    tableName:"plats",
-    timestamps:false
-});
-
-
-module.exports=Plat;
+module.exports = Plat;
